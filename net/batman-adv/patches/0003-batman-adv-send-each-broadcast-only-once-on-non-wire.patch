@@ -1,8 +1,10 @@
-From f3fbb764235104e6dbc9a8e58ba66283d15e9d9f Mon Sep 17 00:00:00 2001
-Message-Id: <f3fbb764235104e6dbc9a8e58ba66283d15e9d9f.1362829607.git.mschiffer@universe-factory.net>
+From bb4a1a23ce114378c5895f38da0a2fa6a8111eec Mon Sep 17 00:00:00 2001
+Message-Id: <bb4a1a23ce114378c5895f38da0a2fa6a8111eec.1362922478.git.mschiffer@universe-factory.net>
+In-Reply-To: <e56c79f4e863436d0fc6c48fed0db09b7a49e565.1362922478.git.mschiffer@universe-factory.net>
+References: <e56c79f4e863436d0fc6c48fed0db09b7a49e565.1362922478.git.mschiffer@universe-factory.net>
 From: Matthias Schiffer <mschiffer@universe-factory.net>
-Date: Sat, 9 Mar 2013 11:38:41 +0100
-Subject: [PATCH] batman-adv: send each broadcast only once on non-wireless
+Date: Sat, 9 Mar 2013 23:13:39 +0100
+Subject: [PATCH 3/3] batman-adv: send each broadcast only once on non-wireless
  interfaces
 
 While it makes sense to send each broadcast thrice on 802.11 (WLAN) interfaces
@@ -15,36 +17,29 @@ number of broadcast packets sent on non-wireless links to one.
 
 Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
 ---
- hard-interface.c | 11 +++++++++++
- main.h           |  5 +++++
- send.c           |  5 ++++-
- types.h          |  1 +
- 4 files changed, 21 insertions(+), 1 deletion(-)
+ hard-interface.c | 4 ++++
+ main.h           | 5 +++++
+ send.c           | 5 ++++-
+ types.h          | 1 +
+ 4 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/hard-interface.c b/hard-interface.c
-index fd99e42..3f3ff9f 100644
+index 787ae65..1feb524 100644
 --- a/hard-interface.c
 +++ b/hard-interface.c
-@@ -515,6 +515,17 @@ batadv_hardif_add_interface(struct net_device *net_dev)
+@@ -546,6 +546,10 @@ batadv_hardif_add_interface(struct net_device *net_dev)
  	INIT_WORK(&hard_iface->cleanup_work,
  		  batadv_hardif_remove_interface_finish);
  
 +	hard_iface->num_bcasts = BATADV_NUM_BCASTS_DEFAULT;
-+
-+#if IS_ENABLED(CONFIG_WIRELESS_EXT) || IS_ENABLED(CONFIG_CFG80211)
-+	if (net_dev->ieee80211_ptr)
++	if (batadv_is_wifi_net_device(net_dev))
 +		hard_iface->num_bcasts = BATADV_NUM_BCASTS_WIRELESS;
-+#if IS_ENABLED(CONFIG_WIRELESS_EXT)
-+	else if (net_dev->wireless_handlers)
-+		hard_iface->num_bcasts = BATADV_NUM_BCASTS_WIRELESS;
-+#endif
-+#endif
 +
  	/* extra reference for return */
  	atomic_set(&hard_iface->refcount, 2);
  
 diff --git a/main.h b/main.h
-index e6eaf43..2c751c6 100644
+index 08c5dd1..f4c1b8c 100644
 --- a/main.h
 +++ b/main.h
 @@ -76,6 +76,11 @@
@@ -60,10 +55,10 @@ index e6eaf43..2c751c6 100644
  #define ARP_REQ_DELAY 250
  /* numbers of originator to contact for any PUT/GET DHT operation */
 diff --git a/send.c b/send.c
-index 0a0bb45..e21138f 100644
+index 80ca65f..c3300b0 100644
 --- a/send.c
 +++ b/send.c
-@@ -260,6 +260,9 @@ static void batadv_send_outstanding_bcast_packet(struct work_struct *work)
+@@ -255,6 +255,9 @@ static void batadv_send_outstanding_bcast_packet(struct work_struct *work)
  		if (hard_iface->soft_iface != soft_iface)
  			continue;
  
@@ -73,7 +68,7 @@ index 0a0bb45..e21138f 100644
  		/* send a copy of the saved skb */
  		skb1 = skb_clone(forw_packet->skb, GFP_ATOMIC);
  		if (skb1)
-@@ -271,7 +274,7 @@ static void batadv_send_outstanding_bcast_packet(struct work_struct *work)
+@@ -266,7 +269,7 @@ static void batadv_send_outstanding_bcast_packet(struct work_struct *work)
  	forw_packet->num_packets++;
  
  	/* if we still have some more bcasts to send */
@@ -83,7 +78,7 @@ index 0a0bb45..e21138f 100644
  						 msecs_to_jiffies(5));
  		return;
 diff --git a/types.h b/types.h
-index aba8364..0c5009f 100644
+index 4cd87a0..1ac6ed1 100644
 --- a/types.h
 +++ b/types.h
 @@ -76,6 +76,7 @@ struct batadv_hard_iface {

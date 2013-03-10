@@ -1,0 +1,114 @@
+From a4c34dafa4c52b116e21475e9b73bb755d1ccfa5 Mon Sep 17 00:00:00 2001
+Message-Id: <a4c34dafa4c52b116e21475e9b73bb755d1ccfa5.1362922478.git.mschiffer@universe-factory.net>
+In-Reply-To: <e56c79f4e863436d0fc6c48fed0db09b7a49e565.1362922478.git.mschiffer@universe-factory.net>
+References: <e56c79f4e863436d0fc6c48fed0db09b7a49e565.1362922478.git.mschiffer@universe-factory.net>
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Sat, 9 Mar 2013 21:45:16 +0100
+Subject: [PATCH 2/3] batman-adv: split batadv_is_wifi_iface() into two
+ functions
+
+Previously batadv_is_wifi_iface() did two things at once: looking up a
+net_device from an interface index, and determining if it is a wifi device.
+
+The second part is useful itself when the caller already has a net_device
+reference.
+
+Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
+---
+ hard-interface.c | 73 +++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 41 insertions(+), 32 deletions(-)
+
+diff --git a/hard-interface.c b/hard-interface.c
+index 368219e..787ae65 100644
+--- a/hard-interface.c
++++ b/hard-interface.c
+@@ -117,6 +117,47 @@ static int batadv_is_valid_iface(const struct net_device *net_dev)
+ 	return 1;
+ }
+ 
++/* This function returns true if the net device is a 802.11 wireless device */
++static bool batadv_is_wifi_net_device(struct net_device *net_device)
++{
++#ifdef CONFIG_WIRELESS_EXT
++	/* pre-cfg80211 drivers have to implement WEXT, so it is possible to
++	 * check for wireless_handlers != NULL
++	 */
++	if (net_device->wireless_handlers)
++		return true;
++#endif
++
++	/* cfg80211 drivers have to set ieee80211_ptr */
++	if (net_device->ieee80211_ptr)
++		return true;
++
++	return false;
++}
++
++/* This function returns true if the interface represented by ifindex is a
++ * 802.11 wireless device
++ */
++bool batadv_is_wifi_iface(int ifindex)
++{
++	struct net_device *net_device = NULL;
++	bool ret = false;
++
++	if (ifindex == BATADV_NULL_IFINDEX)
++		goto out;
++
++	net_device = dev_get_by_index(&init_net, ifindex);
++	if (!net_device)
++		goto out;
++
++	ret = batadv_is_wifi_net_device(net_device);
++
++out:
++	if (net_device)
++		dev_put(net_device);
++	return ret;
++}
++
+ static struct batadv_hard_iface *
+ batadv_hardif_get_active(const struct net_device *soft_iface)
+ {
+@@ -615,38 +656,6 @@ out:
+ 	return NOTIFY_DONE;
+ }
+ 
+-/* This function returns true if the interface represented by ifindex is a
+- * 802.11 wireless device
+- */
+-bool batadv_is_wifi_iface(int ifindex)
+-{
+-	struct net_device *net_device = NULL;
+-	bool ret = false;
+-
+-	if (ifindex == BATADV_NULL_IFINDEX)
+-		goto out;
+-
+-	net_device = dev_get_by_index(&init_net, ifindex);
+-	if (!net_device)
+-		goto out;
+-
+-#ifdef CONFIG_WIRELESS_EXT
+-	/* pre-cfg80211 drivers have to implement WEXT, so it is possible to
+-	 * check for wireless_handlers != NULL
+-	 */
+-	if (net_device->wireless_handlers)
+-		ret = true;
+-	else
+-#endif
+-		/* cfg80211 drivers have to set ieee80211_ptr */
+-		if (net_device->ieee80211_ptr)
+-			ret = true;
+-out:
+-	if (net_device)
+-		dev_put(net_device);
+-	return ret;
+-}
+-
+ struct notifier_block batadv_hard_if_notifier = {
+ 	.notifier_call = batadv_hard_if_event,
+ };
+-- 
+1.8.1.5
+
