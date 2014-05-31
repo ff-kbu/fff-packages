@@ -158,7 +158,7 @@ define Package/libavahi-client
   $(call Package/avahi/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libavahi +avahi-daemon
+  DEPENDS:=+libavahi-dbus-support +avahi-daemon
   TITLE+= (libavahi-client library)
 endef
 
