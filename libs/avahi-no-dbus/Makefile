@@ -12,7 +12,7 @@ PKG_VERSION:=0.6.31-no-dbus
 PKG_RELEASE:=5
 
 
-PKG_SOURCE:=avahi-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=avahi-0.6.31.tar.gz
 PKG_SOURCE_URL:=http://avahi.org/download/
 PKG_MD5SUM:=2f22745b8f7368ad5a0a3fddac343f2d
 
