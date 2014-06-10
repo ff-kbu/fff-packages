@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=avahi-no-dbus
-PKG_VERSION:=0.6.31-no-dbus
+PKG_VERSION:=0.6.31
 PKG_RELEASE:=5
 
 
@@ -24,7 +24,7 @@ PKG_REMOVE_FILES:=autogen.sh
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
-PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)/avahi-$(PKG_VERSION)
 
 
 include $(INCLUDE_DIR)/package.mk
